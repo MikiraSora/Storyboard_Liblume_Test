@@ -54,6 +54,8 @@
   <ItemGroup>
     <Compile Include="DNAModel.cs" />
     <Compile Include="LineEffect.cs" />
+    <Compile Include="Lyrics.cs" />
+    <Compile Include="SakuraLyrics.cs" />
   </ItemGroup>
   <ItemGroup />
 </Project>
