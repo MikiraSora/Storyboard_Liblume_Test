@@ -28,7 +28,7 @@ namespace StorybrewScripts
         public float SakuraAlpha=0.15f;
         
         [Configurable]
-        public float SakuraUnitOffset-0.0025;
+        public float SakuraUnitOffset=0.0025f;
 
         [Configurable]
         public int StartTime;
@@ -42,31 +42,15 @@ namespace StorybrewScripts
         [Configurable]
         public string CharPath= @"SB\font\lyrics";
 
-        public List<OsbSprite> sakura_bg_list=null;
+        [Configurable]
+        public int FadeInTimeInv = 50;
+
+        public List<OsbSprite> sakura_bg_list = new List<OsbSprite>();
 
         public List<OsbSprite> LyricsSprites = new List<OsbSprite>();
 
-        public void InitSakuraBG()
-        {
-            var layer = GetLayer("LyricsLayer_BG");
-
-            sakura_bg_list = new List<OsbSprite>();
-
-            for (int i = 0; i < 15; i++)
-            {
-                string path = System.IO.Path.Combine(@"SB\effect\lyrics_bg", $"{i+1}.png");
-                OsbSprite sprite = layer.CreateSprite(path, OsbOrigin.CentreRight);
-                sakura_bg_list.Add(sprite);
-            }
-        }
-
         public override void Generate()
         {
-            if (sakura_bg_list==null)
-            {
-                InitSakuraBG();
-            }
-
             var layer = GetLayer("LyricsLayer");
             foreach (char c in LyricsContent)
             {
@@ -81,7 +65,7 @@ namespace StorybrewScripts
             for(int i=0;i<LyricsSprites.Count;i++)
             {
                 var sprite=LyricsSprites[i];
-                sprite.Fade(OsbEasing.None,StartTime,StartTime+500,0,1);
+                sprite.Fade(OsbEasing.None,StartTime + i * FadeInTimeInv, StartTime+500+i*FadeInTimeInv, 0,1);
                 sprite.Fade(OsbEasing.None,EndTime-500,EndTime,1,0);
 
                 var postion = new CommandPosition(Position.X+(font_size_len+UnitOffset)*i,Position.Y);
@@ -90,30 +74,91 @@ namespace StorybrewScripts
             }
 
             //显示樱花背景 92x480
-            float total_width = LyricsSprites.Count * (font_size_len + UnitOffset);
+            float total_lyrics_content_width = LyricsSprites.Count * (font_size_len + UnitOffset);
             float sakura_size_width = 92.0f * FontScale;
             float sakura_size_height = 480.0f * FontScale;
-            
-            for (int current_index = 0;current_index<(total_width/(sakura_size_width+ SakuraUnitOffset));current_index++)
+        
+            int total_sakura_count = (int)(total_lyrics_content_width / (sakura_size_width + SakuraUnitOffset))+1;
+
+            /*
+            if (total_sakura_count>15)
             {
-                if (current_index >= sakura_bg_list.Count)
-                {
-                    int index = (current_index) % 15;
+                GenerateFullSakura(total_sakura_count,sakura_size_width);
+            }
+            else
+            {
+                GenerateMirrorSakura(total_sakura_count, sakura_size_width);
+            }
+            */
+            GenerateMirrorSakura(total_sakura_count, sakura_size_width);
+        }
 
-                    string path = System.IO.Path.Combine(@"SB\effect\lyrics_bg", $"{index + 1}.png");
-                    OsbSprite sprite = GetLayer("LyricsLayer_BG").CreateSprite(path, OsbOrigin.CentreRight);
-                    sakura_bg_list.Add(sprite);
-                }
+        //认怂,todo//显示一半index,后半部分是前半部分的镜像
+        public void GenerateMirrorSakura(int total_sakura_count, float sakura_size_width)
+        {
+            for (int current_index = 0; current_index < total_sakura_count; current_index++)
+            {
+                var bg_sprite = RequestAvaliableSakuraSprite(current_index);
 
-                var bg_sprite = sakura_bg_list[current_index];
-
-                bg_sprite.Fade(OsbEasing.None, StartTime, StartTime + 500, 0, SakuraAlpha);
+                bg_sprite.Fade(OsbEasing.None, StartTime + current_index * FadeInTimeInv, StartTime + 500 + current_index * FadeInTimeInv, 0, SakuraAlpha);
                 bg_sprite.Fade(OsbEasing.None, EndTime - 500, EndTime, SakuraAlpha, 0);
 
                 var postion = new CommandPosition(Position.X + (sakura_size_width + SakuraUnitOffset) * current_index, Position.Y);
                 bg_sprite.Move(StartTime, postion.X, postion.Y);
                 bg_sprite.Scale(StartTime, FontScale);
             }
+        }
+
+        //显示index 1~15,中间插几张镜像
+        public void GenerateFullSakura(int total_sakura_count, float sakura_size_width)
+        {
+            for (int current_index = 0; current_index < total_sakura_count; current_index++)
+            {
+                int sprite_index = current_index;
+                bool is_loop = false;
+
+                if (sprite_index >8 && sprite_index < (total_sakura_count - 7))
+                {
+                    sprite_index = 8 + sprite_index % 2;
+                    is_loop = sprite_index % 2 != 0;
+                }
+
+                if (sprite_index > (total_sakura_count - 7))
+                {
+                    sprite_index =8+total_sakura_count - sprite_index;
+                }
+
+                var bg_sprite = RequestAvaliableSakuraSprite(sprite_index);
+
+                bg_sprite.Fade(OsbEasing.None, StartTime + current_index * FadeInTimeInv, StartTime + 500 + current_index * FadeInTimeInv, 0, SakuraAlpha);
+                bg_sprite.Fade(OsbEasing.None, EndTime - 500, EndTime, SakuraAlpha, 0);
+
+                if (is_loop)
+                {
+                    if (Random(2)!=0)
+                    {
+                        bg_sprite.FlipH(StartTime, EndTime);
+                    }
+
+                    if (Random(2) != 0)
+                    {
+                        //bg_sprite.FlipV(StartTime, EndTime);
+                    }
+                }
+
+                var postion = new CommandPosition(Position.X + (sakura_size_width + SakuraUnitOffset) * current_index, Position.Y);
+                bg_sprite.Move(StartTime, postion.X, postion.Y);
+                bg_sprite.Scale(StartTime, FontScale);
+            }
+        }
+
+        public OsbSprite RequestAvaliableSakuraSprite(int current_index)
+        {
+            int index = (current_index) % 15;
+
+            string path = System.IO.Path.Combine(@"SB\effect\lyrics_bg", $"{index + 1}.png");
+            OsbSprite sprite = GetLayer("LyricsLayer_BG").CreateSprite(path, OsbOrigin.CentreRight);
+            return sprite;
         }
     }
 }
