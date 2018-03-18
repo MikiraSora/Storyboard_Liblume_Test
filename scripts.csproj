@@ -63,6 +63,7 @@
     <Compile Include="RingAppearanceEffect.cs" />
     <Compile Include="SakuraLyrics.cs" />
     <Compile Include="TitleSakuraFlyingEffect.cs" />
+    <Compile Include="TitleShowTitleEffect.cs" />
   </ItemGroup>
   <ItemGroup />
 </Project>
