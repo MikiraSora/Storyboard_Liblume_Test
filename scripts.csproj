@@ -64,6 +64,7 @@
     <Compile Include="SakuraLyrics.cs" />
     <Compile Include="TitleLightDotFlyEffect.cs" />
     <Compile Include="TitleSakuraFlyingEffect.cs" />
+    <Compile Include="TitleShowInfoEffect.cs" />
     <Compile Include="TitleShowTitleEffect.cs" />
   </ItemGroup>
   <ItemGroup />
